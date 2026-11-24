@@ -1,0 +1,763 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Account profile for a parent or the academy coach.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20,
+          "pattern": "^[0-9+\\-\\s]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["parent", "coach"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "fullName", "phone", "email", "role", "createdAt", "updatedAt"]
+    },
+    "Athlete": {
+      "title": "Athlete",
+      "description": "Student athlete registered at Al-Pop Martial Arts Academy.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteCode": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 24
+        },
+        "parentUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "parentEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "parentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "parentPhone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "age": {
+          "type": "number"
+        },
+        "discipline": {
+          "type": "string",
+          "enum": ["كيك بوكسينج", "كونغ فو", "MMA"]
+        },
+        "groupSchedule": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "monthlyFee": {
+          "type": "number"
+        },
+        "medicalNotes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "parentUid",
+        "parentEmail",
+        "parentName",
+        "parentPhone",
+        "fullName",
+        "age",
+        "discipline",
+        "groupSchedule",
+        "monthlyFee",
+        "medicalNotes",
+        "active",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Daily check-in, check-out, and absence log for an athlete.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "parentEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "date": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "month": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["present", "checked_out", "absent"]
+        },
+        "checkInTime": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "checkOutTime": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "coachNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "athleteId",
+        "parentUid",
+        "parentEmail",
+        "date",
+        "month",
+        "status",
+        "checkInTime",
+        "checkOutTime",
+        "coachNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentRecord": {
+      "title": "PaymentRecord",
+      "description": "Monthly subscription fee payment recorded by the coach.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "parentEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "month": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^\\d{4}-\\d{2}$"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["نقدي", "إنستاباي", "فودافون كاش", "تحويل بنكي"]
+        },
+        "paidAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "recordedBy": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "athleteId",
+        "parentUid",
+        "parentEmail",
+        "month",
+        "amount",
+        "method",
+        "paidAt",
+        "recordedBy",
+        "notes",
+        "createdAt"
+      ]
+    },
+    "AcademyNotification": {
+      "title": "AcademyNotification",
+      "description": "Real-time notification sent from coach to parent.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "parentEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "athleteId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "type": {
+          "type": "string",
+          "enum": ["check_in", "check_out", "absent", "payment", "general", "holiday"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "parentUid",
+        "parentEmail",
+        "athleteId",
+        "athleteName",
+        "type",
+        "title",
+        "message",
+        "read",
+        "createdAt"
+      ]
+    },
+    "FcmDeviceToken": {
+      "title": "FcmDeviceToken",
+      "description": "Registered Firebase Cloud Messaging push token for a parent or coach device.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["parent", "coach"]
+        },
+        "token": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 500
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "uid", "email", "role", "token", "platform", "updatedAt"]
+    },
+    "ParentMessage": {
+      "title": "ParentMessage",
+      "description": "Direct message sent from a parent to the academy coach, with coach read/reply state.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "parentPhone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "parentEmail": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "athleteId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "athleteName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "readByCoach": {
+          "type": "boolean"
+        },
+        "coachReply": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "repliedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "parentUid",
+        "parentName",
+        "parentPhone",
+        "parentEmail",
+        "athleteId",
+        "athleteName",
+        "subject",
+        "message",
+        "readByCoach",
+        "coachReply",
+        "repliedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RegistrationRequest": {
+      "title": "RegistrationRequest",
+      "description": "Public academy registration request submitted by a prospective parent for an athlete.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "parentName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "parentPhone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20,
+          "pattern": "^[0-9+\\-\\s]+$"
+        },
+        "athleteName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "age": {
+          "type": "number"
+        },
+        "discipline": {
+          "type": "string",
+          "enum": ["كيك بوكسينج", "كونغ فو", "MMA"]
+        },
+        "monthlyFee": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "contacted", "approved", "rejected"]
+        },
+        "coachNote": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "linkedAthleteId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "parentName",
+        "parentPhone",
+        "athleteName",
+        "age",
+        "discipline",
+        "monthlyFee",
+        "notes",
+        "status",
+        "coachNote",
+        "linkedAthleteId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PushSubscription": {
+      "title": "PushSubscription",
+      "description": "W3C Web Push subscription (endpoint + encryption keys) registered for a parent or coach device.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "enum": ["parent", "coach"]
+        },
+        "endpoint": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "p256dh": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 300
+        },
+        "auth": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 200
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "uid", "email", "role", "endpoint", "p256dh", "auth", "platform", "updatedAt"]
+    },
+    "AcademyHoliday": {
+      "title": "AcademyHoliday",
+      "description": "Training holiday/cancellation date declared by the coach.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "date": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "date", "reason", "createdAt"]
+    },
+    "CatalogPhoto": {
+      "title": "CatalogPhoto",
+      "description": "Gallery/catalog photo submitted by a parent (pending approval) or published directly by the coach.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "category": {
+          "type": "string",
+          "enum": ["champions", "coach", "training", "identity"]
+        },
+        "imageUrl": {
+          "type": "string",
+          "minLength": 30,
+          "maxLength": 450000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"]
+        },
+        "submittedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "submittedByName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "submittedByRole": {
+          "type": "string",
+          "enum": ["parent", "coach"]
+        },
+        "athleteId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "athleteName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "coachNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "caption",
+        "category",
+        "imageUrl",
+        "status",
+        "submittedByUid",
+        "submittedByName",
+        "submittedByRole",
+        "athleteId",
+        "athleteName",
+        "coachNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile containing parent or coach contact information (PII restricted to owner and coach)."
+    },
+    "/athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/Athlete" },
+      "description": "Registered athletes at Al-Pop Martial Arts Academy."
+    },
+    "/attendance/{recordId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Daily check-in, check-out, and absence records."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/PaymentRecord" },
+      "description": "Monthly subscription payment records."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/AcademyNotification" },
+      "description": "Real-time notifications sent to parents."
+    },
+    "/fcmTokens/{tokenId}": {
+      "schema": { "$ref": "#/entities/FcmDeviceToken" },
+      "description": "FCM Web Push registration tokens isolated per owner device."
+    },
+    "/pushSubscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/PushSubscription" },
+      "description": "W3C Web Push device subscriptions isolated per owner and readable by coach for background notification delivery."
+    },
+    "/parentMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/ParentMessage" },
+      "description": "Direct messages sent by parents to the coach and coach replies."
+    },
+    "/registrationRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/RegistrationRequest" },
+      "description": "Public registration requests submitted by prospective parents, readable and managed exclusively by the coach."
+    },
+    "/academyHolidays/{holidayId}": {
+      "schema": { "$ref": "#/entities/AcademyHoliday" },
+      "description": "Training holidays declared by the coach (publicly readable schedule status, coach-only writes)."
+    },
+    "/catalogPhotos/{photoId}": {
+      "schema": { "$ref": "#/entities/CatalogPhoto" },
+      "description": "Academy photo catalog entries: coach publishes approved photos immediately; parents submit pending photos for coach approval."
+    }
+  }
+}

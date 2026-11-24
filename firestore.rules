@@ -1,0 +1,569 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection health check
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // --- Global Hardened Primitives ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isCoach() {
+      return isVerifiedUser() && request.auth.token.email == 'bahermuorad2@gmail.com';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isRecordParent(data) {
+      return isSignedIn() && (
+        data.parentUid == request.auth.uid ||
+        (
+          request.auth.token.email_verified == true &&
+          data.parentEmail is string &&
+          data.parentEmail.size() > 0 &&
+          data.parentEmail == request.auth.token.email
+        )
+      );
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'fullName', 'phone', 'email', 'role', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'fullName', 'phone', 'email', 'role', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 20 && data.phone.matches('^[0-9+\\-\\s]+$')
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 160
+        && data.role in ['parent', 'coach']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAthlete(data) {
+      return data.keys().hasAll([
+          'id', 'parentUid', 'parentEmail', 'parentName', 'parentPhone',
+          'fullName', 'age', 'discipline', 'groupSchedule', 'monthlyFee',
+          'medicalNotes', 'active', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'athleteCode', 'parentUid', 'parentEmail', 'parentName', 'parentPhone',
+          'fullName', 'age', 'discipline', 'groupSchedule', 'monthlyFee',
+          'medicalNotes', 'active', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && (!('athleteCode' in data) || (data.athleteCode is string && data.athleteCode.size() >= 3 && data.athleteCode.size() <= 24))
+        && data.parentUid is string && data.parentUid.size() <= 128
+        && data.parentEmail is string && data.parentEmail.size() <= 160
+        && data.parentName is string && data.parentName.size() >= 2 && data.parentName.size() <= 100
+        && data.parentPhone is string && data.parentPhone.size() >= 8 && data.parentPhone.size() <= 20
+        && data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100
+        && data.age is number && data.age >= 4 && data.age <= 35
+        && data.discipline in ['كيك بوكسينج', 'كونغ فو', 'MMA']
+        && data.groupSchedule is string && data.groupSchedule.size() >= 2 && data.groupSchedule.size() <= 120
+        && data.monthlyFee is number && data.monthlyFee >= 0 && data.monthlyFee <= 10000
+        && data.medicalNotes is string && data.medicalNotes.size() <= 300
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAttendance(data) {
+      return data.keys().hasAll([
+          'id', 'athleteId', 'parentUid', 'parentEmail', 'date', 'month',
+          'status', 'checkInTime', 'checkOutTime', 'coachNote', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'athleteId', 'parentUid', 'parentEmail', 'date', 'month',
+          'status', 'checkInTime', 'checkOutTime', 'coachNote', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.athleteId)
+        && data.parentUid is string && data.parentUid.size() <= 128
+        && data.parentEmail is string && data.parentEmail.size() <= 160
+        && data.date is string && data.date.size() == 10 && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.month is string && data.month.size() == 7 && data.month.matches('^\\d{4}-\\d{2}$')
+        && data.status in ['present', 'checked_out', 'absent']
+        && data.checkInTime is string && data.checkInTime.size() <= 64
+        && data.checkOutTime is string && data.checkOutTime.size() <= 64
+        && data.coachNote is string && data.coachNote.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+          'id', 'athleteId', 'parentUid', 'parentEmail', 'month',
+          'amount', 'method', 'paidAt', 'recordedBy', 'notes', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'athleteId', 'parentUid', 'parentEmail', 'month',
+          'amount', 'method', 'paidAt', 'recordedBy', 'notes', 'createdAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.athleteId)
+        && data.parentUid is string && data.parentUid.size() <= 128
+        && data.parentEmail is string && data.parentEmail.size() <= 160
+        && data.month is string && data.month.size() == 7 && data.month.matches('^\\d{4}-\\d{2}$')
+        && data.amount is number && data.amount > 0 && data.amount <= 50000
+        && data.method in ['نقدي', 'إنستاباي', 'فودافون كاش', 'تحويل بنكي']
+        && data.paidAt is string && data.paidAt.size() >= 1 && data.paidAt.size() <= 64
+        && data.recordedBy is string && data.recordedBy.size() >= 2 && data.recordedBy.size() <= 100
+        && data.notes is string && data.notes.size() <= 300
+        && data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll([
+          'id', 'parentUid', 'parentEmail', 'athleteId', 'athleteName',
+          'type', 'title', 'message', 'read', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'parentUid', 'parentEmail', 'athleteId', 'athleteName',
+          'type', 'title', 'message', 'read', 'createdAt'
+        ])
+        && isValidId(data.id)
+        && data.parentUid is string && data.parentUid.size() <= 128
+        && data.parentEmail is string && data.parentEmail.size() <= 160
+        && isValidId(data.athleteId)
+        && data.athleteName is string && data.athleteName.size() >= 2 && data.athleteName.size() <= 120
+        && data.type in ['check_in', 'check_out', 'absent', 'payment', 'general', 'holiday']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 600
+        && data.read is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidFcmToken(data) {
+      return data.keys().hasAll(['id', 'uid', 'email', 'role', 'token', 'platform', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'uid', 'email', 'role', 'token', 'platform', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 160
+        && data.role in ['parent', 'coach']
+        && data.token is string && data.token.size() >= 20 && data.token.size() <= 500
+        && data.platform is string && data.platform.size() >= 2 && data.platform.size() <= 40
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPushSubscription(data) {
+      return data.keys().hasAll(['id', 'uid', 'email', 'role', 'endpoint', 'p256dh', 'auth', 'platform', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'uid', 'email', 'role', 'endpoint', 'p256dh', 'auth', 'platform', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 160
+        && data.role in ['parent', 'coach']
+        && data.endpoint is string && data.endpoint.size() >= 10 && data.endpoint.size() <= 1000
+        && data.p256dh is string && data.p256dh.size() >= 10 && data.p256dh.size() <= 300
+        && data.auth is string && data.auth.size() >= 10 && data.auth.size() <= 200
+        && data.platform is string && data.platform.size() >= 2 && data.platform.size() <= 40
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidParentMessage(data) {
+      return data.keys().hasAll([
+          'id', 'parentUid', 'parentName', 'parentPhone', 'parentEmail',
+          'athleteId', 'athleteName', 'subject', 'message',
+          'readByCoach', 'coachReply', 'repliedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'parentUid', 'parentName', 'parentPhone', 'parentEmail',
+          'athleteId', 'athleteName', 'subject', 'message',
+          'readByCoach', 'coachReply', 'repliedAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.parentUid)
+        && data.parentName is string && data.parentName.size() >= 2 && data.parentName.size() <= 100
+        && data.parentPhone is string && data.parentPhone.size() >= 8 && data.parentPhone.size() <= 20
+        && data.parentEmail is string && data.parentEmail.size() <= 160
+        && data.athleteId is string && data.athleteId.size() <= 128
+        && data.athleteName is string && data.athleteName.size() <= 120
+        && data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 140
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 1000
+        && data.readByCoach is bool
+        && data.coachReply is string && data.coachReply.size() <= 1000
+        && data.repliedAt is string && data.repliedAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRegistrationRequest(data) {
+      return data.keys().hasAll([
+          'id', 'parentName', 'parentPhone', 'athleteName', 'age',
+          'discipline', 'monthlyFee', 'notes', 'status', 'coachNote',
+          'linkedAthleteId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'parentName', 'parentPhone', 'athleteName', 'age',
+          'discipline', 'monthlyFee', 'notes', 'status', 'coachNote',
+          'linkedAthleteId', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.parentName is string && data.parentName.size() >= 2 && data.parentName.size() <= 100
+        && data.parentPhone is string && data.parentPhone.size() >= 8 && data.parentPhone.size() <= 20 && data.parentPhone.matches('^[0-9+\\-\\s]+$')
+        && data.athleteName is string && data.athleteName.size() >= 2 && data.athleteName.size() <= 100
+        && data.age is number && data.age >= 4 && data.age <= 35
+        && data.discipline in ['كيك بوكسينج', 'كونغ فو', 'MMA']
+        && data.monthlyFee is number && data.monthlyFee >= 0 && data.monthlyFee <= 10000
+        && data.notes is string && data.notes.size() <= 400
+        && data.status in ['pending', 'contacted', 'approved', 'rejected']
+        && data.coachNote is string && data.coachNote.size() <= 400
+        && data.linkedAthleteId is string && data.linkedAthleteId.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAcademyHoliday(data) {
+      return data.keys().hasAll(['id', 'date', 'reason', 'createdAt'])
+        && data.keys().hasOnly(['id', 'date', 'reason', 'createdAt'])
+        && data.id is string && data.id.size() == 10 && data.id.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.date is string && data.date.size() == 10 && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.id == data.date
+        && data.reason is string && data.reason.size() <= 200
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCatalogPhoto(data) {
+      return data.keys().hasAll([
+          'id', 'title', 'caption', 'category', 'imageUrl', 'status',
+          'submittedByUid', 'submittedByName', 'submittedByRole',
+          'athleteId', 'athleteName', 'coachNote', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'title', 'caption', 'category', 'imageUrl', 'status',
+          'submittedByUid', 'submittedByName', 'submittedByRole',
+          'athleteId', 'athleteName', 'coachNote', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+        && data.caption is string && data.caption.size() <= 300
+        && data.category in ['champions', 'coach', 'training', 'identity']
+        && data.imageUrl is string && data.imageUrl.size() >= 30 && data.imageUrl.size() <= 450000
+        && (
+          data.imageUrl[0:23] == 'data:image/jpeg;base64,' ||
+          data.imageUrl[0:22] == 'data:image/png;base64,' ||
+          data.imageUrl[0:23] == 'data:image/webp;base64,'
+        )
+        && data.status in ['pending', 'approved', 'rejected']
+        && isValidId(data.submittedByUid)
+        && data.submittedByName is string && data.submittedByName.size() >= 2 && data.submittedByName.size() <= 100
+        && data.submittedByRole in ['parent', 'coach']
+        && data.athleteId is string && data.athleteId.size() <= 128
+        && data.athleteName is string && data.athleteName.size() <= 120
+        && data.coachNote is string && data.coachNote.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // 1. User Profiles (PII Isolated)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isCoach());
+      allow list: if isCoach();
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isCoach() ||
+          (isOwner(userId) && incoming().role == 'parent' && incoming().email == request.auth.token.email)
+        );
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isCoach() ||
+          (
+            isOwner(userId)
+            && incoming().role == existing().role
+            && incoming().email == existing().email
+            && incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'phone', 'updatedAt'])
+          )
+        );
+      allow delete: if isCoach() && isValidId(userId);
+    }
+
+    // 2. Athletes
+    match /athletes/{athleteId} {
+      allow get: if isValidId(athleteId) && (isCoach() || isRecordParent(existing()));
+      allow list: if isCoach() || isRecordParent(existing());
+      allow create: if isSignedIn()
+        && isValidId(athleteId)
+        && isValidAthlete(incoming())
+        && incoming().id == athleteId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isCoach() ||
+          (
+            incoming().parentUid == request.auth.uid
+            && incoming().parentEmail == request.auth.token.email
+            && incoming().monthlyFee == 250
+          )
+        );
+      allow update: if isSignedIn()
+        && isValidId(athleteId)
+        && isValidAthlete(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isCoach() ||
+          (
+            isRecordParent(existing())
+            && (existing().parentUid == '' || existing().parentUid == request.auth.uid)
+            && incoming().parentUid == request.auth.uid
+            && incoming().parentEmail == existing().parentEmail
+            && incoming().monthlyFee == existing().monthlyFee
+            && incoming().diff(existing()).affectedKeys().hasOnly(['parentUid', 'medicalNotes', 'updatedAt'])
+          )
+        );
+      allow delete: if isCoach() && isValidId(athleteId);
+    }
+
+    // 3. Attendance Records (Coach Managed, Parent Readable)
+    match /attendance/{recordId} {
+      allow get: if isValidId(recordId) && (isCoach() || isRecordParent(existing()));
+      allow list: if isCoach() || isRecordParent(existing());
+      allow create: if isCoach()
+        && isValidId(recordId)
+        && isValidAttendance(incoming())
+        && incoming().id == recordId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/athletes/$(incoming().athleteId));
+      allow update: if isCoach()
+        && isValidId(recordId)
+        && isValidAttendance(incoming())
+        && incoming().id == existing().id
+        && incoming().athleteId == existing().athleteId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'checkInTime', 'checkOutTime', 'coachNote', 'parentUid', 'parentEmail', 'updatedAt']);
+      allow delete: if isCoach() && isValidId(recordId);
+    }
+
+    // 4. Payments (Coach Managed, Parent Readable)
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && (isCoach() || isRecordParent(existing()));
+      allow list: if isCoach() || isRecordParent(existing());
+      allow create: if isCoach()
+        && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().id == paymentId
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/athletes/$(incoming().athleteId));
+      allow update: if isCoach()
+        && isValidId(paymentId)
+        && isValidPayment(incoming())
+        && incoming().id == existing().id
+        && incoming().athleteId == existing().athleteId
+        && incoming().createdAt == existing().createdAt;
+      allow delete: if isCoach() && isValidId(paymentId);
+    }
+
+    // 5. Notifications (Coach Sends, Parent Reads & Marks Read)
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && (isCoach() || isRecordParent(existing()));
+      allow list: if isCoach() || isRecordParent(existing());
+      allow create: if isCoach()
+        && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && incoming().id == notificationId
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/athletes/$(incoming().athleteId));
+      allow update: if isSignedIn()
+        && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && (
+          isCoach() ||
+          (
+            isRecordParent(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+          )
+        );
+      allow delete: if isCoach() && isValidId(notificationId);
+    }
+
+    // 6. FCM Push Notification Device Tokens (Owner Managed, Coach Readable for Delivery)
+    match /fcmTokens/{tokenId} {
+      allow get: if isValidId(tokenId) && (isCoach() || (isSignedIn() && existing().uid == request.auth.uid));
+      allow list: if isCoach() || (isSignedIn() && existing().uid == request.auth.uid);
+      allow create: if isSignedIn()
+        && isValidId(tokenId)
+        && isValidFcmToken(incoming())
+        && incoming().id == tokenId
+        && incoming().uid == request.auth.uid
+        && incoming().email == request.auth.token.email
+        && (isCoach() || incoming().role == 'parent')
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isValidId(tokenId)
+        && isValidFcmToken(incoming())
+        && incoming().id == existing().id
+        && incoming().uid == existing().uid
+        && existing().uid == request.auth.uid
+        && incoming().email == existing().email
+        && incoming().role == existing().role
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['token', 'platform', 'updatedAt']);
+      allow delete: if isValidId(tokenId) && (isCoach() || (isSignedIn() && existing().uid == request.auth.uid));
+    }
+
+    // 6b. W3C Web Push Subscriptions (Owner Managed, Coach Readable for Delivery)
+    match /pushSubscriptions/{subId} {
+      allow get: if isValidId(subId) && (isCoach() || (isSignedIn() && existing().uid == request.auth.uid));
+      allow list: if isCoach() || (isSignedIn() && existing().uid == request.auth.uid);
+      allow create: if isSignedIn()
+        && isValidId(subId)
+        && isValidPushSubscription(incoming())
+        && incoming().id == subId
+        && incoming().uid == request.auth.uid
+        && incoming().email == request.auth.token.email
+        && (isCoach() || incoming().role == 'parent')
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isValidId(subId)
+        && isValidPushSubscription(incoming())
+        && incoming().id == existing().id
+        && incoming().uid == existing().uid
+        && existing().uid == request.auth.uid
+        && incoming().email == existing().email
+        && incoming().role == existing().role
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['endpoint', 'p256dh', 'auth', 'platform', 'updatedAt']);
+      allow delete: if isValidId(subId) && (isCoach() || (isSignedIn() && existing().uid == request.auth.uid));
+    }
+
+    // 7. Parent-to-Coach Direct Messages (Parent Sends & Reads Own, Coach Reads All & Replies)
+    match /parentMessages/{messageId} {
+      allow get: if isValidId(messageId) && (isCoach() || (isSignedIn() && existing().parentUid == request.auth.uid));
+      allow list: if isCoach() || (isSignedIn() && existing().parentUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && isValidId(messageId)
+        && isValidParentMessage(incoming())
+        && incoming().id == messageId
+        && incoming().parentUid == request.auth.uid
+        && incoming().readByCoach == false
+        && incoming().coachReply == ''
+        && incoming().repliedAt == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isCoach()
+        && isValidId(messageId)
+        && isValidParentMessage(incoming())
+        && incoming().id == existing().id
+        && incoming().parentUid == existing().parentUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['readByCoach', 'coachReply', 'repliedAt', 'updatedAt']);
+      allow delete: if isCoach() && isValidId(messageId);
+    }
+
+    // 8. Public Academy Registration Requests (Anyone Can Submit Strictly Validated Request, Coach Only Reads/Manages)
+    match /registrationRequests/{requestId} {
+      allow get, list: if isCoach();
+      allow create: if isValidId(requestId)
+        && isValidRegistrationRequest(incoming())
+        && incoming().id == requestId
+        && incoming().status == 'pending'
+        && incoming().coachNote == ''
+        && incoming().linkedAthleteId == ''
+        && incoming().monthlyFee == 250
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isCoach()
+        && isValidId(requestId)
+        && isValidRegistrationRequest(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'coachNote', 'linkedAthleteId', 'updatedAt']);
+      allow delete: if isCoach() && isValidId(requestId);
+    }
+
+    // 9. Academy Holidays (Publicly Readable Schedule Status, Coach Managed)
+    match /academyHolidays/{holidayId} {
+      allow get, list: if true;
+      allow create, update: if isCoach()
+        && isValidId(holidayId)
+        && isValidAcademyHoliday(incoming())
+        && incoming().id == holidayId
+        && incoming().createdAt == request.time;
+      allow delete: if isCoach() && isValidId(holidayId);
+    }
+
+    // 10. Academy Photo Catalog (Public Approved Reads, Parent Pending Submissions, Coach Full Moderation & Direct Publish)
+    match /catalogPhotos/{photoId} {
+      allow get, list: if isCoach()
+        || existing().status == 'approved'
+        || (isSignedIn() && existing().submittedByUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && isValidId(photoId)
+        && isValidCatalogPhoto(incoming())
+        && incoming().id == photoId
+        && incoming().submittedByUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (
+            isCoach()
+            && incoming().submittedByRole == 'coach'
+            && incoming().status in ['approved', 'pending']
+          ) || (
+            incoming().submittedByRole == 'parent'
+            && incoming().status == 'pending'
+            && incoming().coachNote == ''
+          )
+        );
+      allow update: if isCoach()
+        && isValidId(photoId)
+        && isValidCatalogPhoto(incoming())
+        && incoming().id == existing().id
+        && incoming().submittedByUid == existing().submittedByUid
+        && incoming().submittedByRole == existing().submittedByRole
+        && incoming().imageUrl == existing().imageUrl
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'title', 'caption', 'category', 'coachNote', 'updatedAt']);
+      allow delete: if isValidId(photoId)
+        && (
+          isCoach()
+          || (isSignedIn() && existing().submittedByUid == request.auth.uid && existing().status == 'pending')
+        );
+    }
+  }
+}

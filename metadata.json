@@ -1,0 +1,6 @@
+{
+  "name": "أكاديمية البوب للفنون القتالية",
+  "description": "منصة متكاملة لأولياء الأمور والمدرب لمتابعة حضور وانصراف اللاعبين وإشعارات التدريب الفورية وإدارة الاشتراكات والتقارير الشهرية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
